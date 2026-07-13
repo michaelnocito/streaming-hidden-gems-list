@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6C09BL3WH1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6C09BL3WH1');
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hidden Gem Movies — 581 great films almost nobody has watched</title>
+<meta name="description" content="581 hidden gem movies — rated 8.0+ by 5,000-50,000 voters — surfaced with SQL from IMDb's 12.6-million-title dataset. Browse the full list and vote." />
+<meta property="og:title" content="Hidden Gem Movies" />
+<meta property="og:description" content="581 hidden gems found with SQL across 751,802 IMDb movies. Rated 8.0+, seen by almost nobody. Browse the full list and vote on the picks." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://michaelnocito.github.io/streaming-hidden-gems-list/" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Hidden Gem Movies" />
+<meta name="twitter:description" content="581 hidden gems found with SQL across 751,802 IMDb movies. Rated 8.0+, seen by almost nobody." />
+<style>
+  :root {
+    --bg: #0b0e17;
+    --bg2: #111524;
+    --card: #161b2e;
+    --card2: #1c2238;
+    --line: #262d45;
+    --text: #eef1fb;
+    --muted: #9aa3c0;
+    --gem: #3dd7c4;
+    --gem-dim: #1f6b62;
+    --gold: #f5c451;
+    --meh: #6b7391;
+    --free: #7bd88f;
+    --shadow: 0 8px 30px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #17203b 0%, transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, #1a2340 0%, transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--gem); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+
+  header.hero { padding: 64px 20px 28px; text-align: center; }
+  .hero .eyebrow {
+    display: inline-block; letter-spacing: .18em; text-transform: uppercase;
+    font-size: 12px; color: var(--gem); border: 1px solid var(--gem-dim);
+    padding: 5px 12px; border-radius: 999px; margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: clamp(34px, 6vw, 58px); margin: 0 0 12px; line-height: 1.05;
+    font-weight: 800; letter-spacing: -.02em;
+    background: linear-gradient(120deg, #ffffff 20%, var(--gem) 90%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p.sub { font-size: clamp(16px, 2.4vw, 20px); color: var(--muted); max-width: 680px; margin: 0 auto 26px; }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin: 8px auto 6px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px 20px; min-width: 130px;
+  }
+  .stat .num { font-size: 26px; font-weight: 800; color: #fff; }
+  .stat .num.gem { color: var(--gem); }
+  .stat .lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+  .method {
+    max-width: 760px; margin: 26px auto 0; background: var(--bg2);
+    border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px;
+    font-size: 14.5px; color: var(--muted); text-align: left;
+  }
+  .method b { color: var(--text); }
+  .method .crit { color: var(--gem); }
+
+  .controls {
+    position: sticky; top: 0; z-index: 20; background: rgba(11,14,23,.86);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+    padding: 14px 0; margin-top: 34px;
+  }
+  .controls .inner { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filters button {
+    background: var(--card); color: var(--muted); border: 1px solid var(--line);
+    padding: 8px 16px; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600;
+    transition: .15s;
+  }
+  .filters button:hover { color: var(--text); border-color: var(--gem-dim); }
+  .filters button.active { background: var(--gem); color: #06231f; border-color: var(--gem); }
+  .search input {
+    background: var(--card); border: 1px solid var(--line); color: var(--text);
+    padding: 9px 14px; border-radius: 999px; font-size: 14px; width: 220px; outline: none;
+  }
+  .search input:focus { border-color: var(--gem-dim); }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px; padding: 30px 0 60px;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow);
+    transition: transform .16s, border-color .16s;
+  }
+  .card:hover { transform: translateY(-3px); border-color: var(--gem-dim); }
+  .thumb { position: relative; aspect-ratio: 460 / 180; background: var(--card2); overflow: hidden; }
+  .tile {
+    width: 100%; height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px; padding: 14px;
+    background:
+      radial-gradient(420px 160px at 85% -20%, rgba(61,215,196,.14) 0%, transparent 70%),
+      radial-gradient(300px 140px at 10% 120%, rgba(245,196,81,.10) 0%, transparent 70%),
+      var(--card2);
+  }
+  .tile .rating { font-size: 34px; font-weight: 800; color: var(--gold); line-height: 1; }
+  .tile .rating small { font-size: 15px; color: var(--muted); font-weight: 600; }
+  .tile .yg { font-size: 12.5px; color: var(--muted); text-align: center; letter-spacing: .02em; }
+  .rankbadge {
+    position: absolute; top: 10px; left: 10px; background: rgba(6,10,20,.82);
+    border: 1px solid var(--gem-dim); color: var(--gem); font-weight: 800; font-size: 13px;
+    padding: 4px 10px; border-radius: 999px; backdrop-filter: blur(3px);
+  }
+  .yearpill {
+    position: absolute; top: 10px; right: 10px; background: rgba(6,10,20,.82);
+    border: 1px solid var(--line); font-weight: 700; font-size: 13px;
+    padding: 4px 10px; border-radius: 999px; backdrop-filter: blur(3px);
+  }
+
+  .body { padding: 16px 16px 6px; flex: 1; display: flex; flex-direction: column; }
+  .body h3 { margin: 0 0 6px; font-size: 17.5px; line-height: 1.25; }
+  .meta { display: flex; gap: 12px; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 10px; flex-wrap: wrap; }
+  .meta .pos { color: var(--gem); font-weight: 700; }
+  .pitch { font-size: 14.5px; color: #cdd3ea; margin: 0 0 14px; flex: 1; }
+
+  .actions { display: flex; gap: 10px; align-items: center; padding: 0 16px 16px; }
+  .imdb-btn {
+    flex: 1; text-align: center; background: var(--card2); border: 1px solid var(--line);
+    color: var(--text); padding: 9px 12px; border-radius: 10px; font-weight: 600; font-size: 14px;
+    transition: .15s;
+  }
+  .imdb-btn:hover { border-color: var(--gem-dim); text-decoration: none; background: #222a45; }
+
+  .vote { border-top: 1px solid var(--line); padding: 13px 16px 16px; }
+  .vote .q { font-size: 12.5px; color: var(--muted); margin-bottom: 9px; text-transform: uppercase; letter-spacing: .06em; }
+  .vote .btns { display: flex; gap: 10px; }
+  .vbtn {
+    flex: 1; background: var(--card2); border: 1px solid var(--line); color: var(--text);
+    padding: 9px 8px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 7px; transition: .15s;
+  }
+  .vbtn:hover:not(:disabled) { border-color: var(--gem-dim); }
+  .vbtn .cnt { font-weight: 700; font-size: 13px; color: var(--muted); }
+  .vbtn:disabled { cursor: default; }
+  .vbtn.gem.chosen { background: var(--gem); color: #06231f; border-color: var(--gem); }
+  .vbtn.gem.chosen .cnt { color: #06231f; }
+  .vbtn.meh.chosen { background: var(--meh); color: #fff; border-color: var(--meh); }
+  .vbtn.meh.chosen .cnt { color: #eef; }
+  .vbar { height: 6px; border-radius: 999px; background: var(--card2); margin-top: 10px; overflow: hidden; display: flex; }
+  .vbar .fill { height: 100%; background: var(--gem); }
+  .vote .result { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 15px; }
+
+  .loadmore {
+    display: block; margin: 0 auto 60px; background: var(--card); color: var(--text);
+    border: 1px solid var(--line); padding: 12px 28px; border-radius: 999px;
+    cursor: pointer; font-size: 15px; font-weight: 700; transition: .15s;
+  }
+  .loadmore:hover { border-color: var(--gem-dim); }
+
+  footer {
+    border-top: 1px solid var(--line); padding: 40px 20px 60px; text-align: center; color: var(--muted);
+    font-size: 14.5px; margin-top: 20px;
+  }
+  footer .repo {
+    display: inline-block; margin: 8px 0 18px; background: var(--card); border: 1px solid var(--line);
+    padding: 12px 20px; border-radius: 12px; color: var(--text);
+  }
+  footer .repo b { color: var(--gem); }
+  .demo-note {
+    text-align: center; font-size: 13px; color: var(--gold); background: rgba(245,196,81,.08);
+    border: 1px solid rgba(245,196,81,.25); border-radius: 10px; padding: 8px 14px;
+    max-width: 640px; margin: 0 auto;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">✦ Found with SQL, not marketing</span>
+    <h1>Hidden Gem Movies</h1>
+    <p class="sub">Films audiences love — that almost nobody has watched. I searched <b style="color:#fff">751,802</b> movies from IMDb's full dataset with SQL to surface the ones that win on craft, not marketing budget.</p>
+    <div class="stats">
+      <div class="stat"><div class="num">751k</div><div class="lbl">Movies analyzed</div></div>
+      <div class="stat"><div class="num gem">581</div><div class="lbl">True hidden gems</div></div>
+      <div class="stat"><div class="num">8.0+</div><div class="lbl">Rating minimum</div></div>
+      <div class="stat"><div class="num">5k–50k</div><div class="lbl">Votes (the hidden band)</div></div>
+    </div>
+    <div class="method">
+      <b>How a movie qualifies:</b> <span class="crit">rated 8.0 or higher (the average movie scores 6.13) with 5,000–50,000 votes</span> — enough opinions to trust the score, too few to be mainstream. Plus a real 60+ minute runtime and no adult titles. Of 347,689 movies anyone has ever rated, just 581 clear the bar — under 0.2%. <b>Here are all 581,</b> ranked by rating. The top picks have a short write-up; the rest are the raw results. <b>Think a rating is wrong?</b> Vote on each one.
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap inner">
+    <div class="filters">
+      <button data-filter="all" class="active">All</button>
+      <button data-filter="docs">Documentaries</button>
+      <button data-filter="classic">Classics (pre-1990)</button>
+      <button data-filter="recent">2020s</button>
+    </div>
+    <div class="search"><input id="search" type="search" placeholder="Search movies…" /></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="grid" class="grid"></div>
+</div>
+<button id="loadmore" class="loadmore hidden">Show more movies</button>
+
+<footer>
+  <div class="wrap">
+    <p id="demoNote" class="demo-note hidden">Preview mode — votes are saved only in your browser. Live shared voting turns on once the site is connected to its database.</p>
+    <div style="height:14px"></div>
+    <p style="max-width:640px;margin:0 auto 4px;">This is the browsable front-end. The full story — the SQL, the import that silently lost 256,000 rows, the fake nulls, and how the list was validated — lives in the methodology repo:</p>
+    <a class="repo" href="https://github.com/michaelnocito/streaming-hidden-gems" target="_blank" rel="noopener">📊 <b>See how these were found</b> — the SQL + methodology on GitHub</a>
+    <p>Data: IMDb non-commercial datasets (snapshot 2026-07-12) · Companion to <a href="https://michaelnocito.github.io/steam-hidden-gems-list/" target="_blank" rel="noopener">Steam Hidden Gems</a> · Built by <a href="https://michaelnocito.github.io" target="_blank" rel="noopener">Michael Nocito</a>, data analyst.</p>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   CONFIG — same Supabase backend as steam-hidden-gems-list.
+   Movie vote keys are "Title (Year)" so they can't collide with
+   game names. The anon key is public by design (RLS limits it to
+   insert-vote + read-counts). See SETUP.md.
+   ============================================================ */
+const SUPABASE_URL = "https://aymrbkhwxpibxbilyqab.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5bXJia2h3eHBpYnhiaWx5cWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NDc1NDIsImV4cCI6MjA5OTEyMzU0Mn0.BMm5iN7RNMBvPChYtOQejy3gyphJngab4CKaG8xOw5U";
+
+const LIVE = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+const PAGE = 60; // cards per page (581 at once would drag on phones)
+const IMDB = m => `https://www.imdb.com/title/${m.tconst}/`;
+const KEY = m => `${m.title} (${m.year})`;
+
+const grid = document.getElementById('grid');
+const moreBtn = document.getElementById('loadmore');
+let MOVIES = [];
+let shown = 0;
+let counts = {}; // key -> {gem, meh}
+
+const voterId = (() => {
+  let v = localStorage.getItem('shg_voter');
+  if (!v) { v = 'v' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('shg_voter', v); }
+  return v;
+})();
+const myVotes = JSON.parse(localStorage.getItem('mhg_myvotes') || '{}');
+
+async function loadCounts() {
+  if (!LIVE) {
+    counts = JSON.parse(localStorage.getItem('mhg_counts') || '{}');
+    document.getElementById('demoNote').classList.remove('hidden');
+    return;
+  }
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/gem_vote_counts?select=game,gems,mehs`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const rows = await r.json();
+    rows.forEach(row => { counts[row.game] = { gem: row.gems || 0, meh: row.mehs || 0 }; });
+  } catch (e) { console.warn('count load failed', e); }
+}
+
+async function sendVote(key, choice) {
+  if (!LIVE) {
+    const c = JSON.parse(localStorage.getItem('mhg_counts') || '{}');
+    c[key] = c[key] || { gem: 0, meh: 0 };
+    c[key][choice]++;
+    localStorage.setItem('mhg_counts', JSON.stringify(c));
+    counts = c;
+    return true;
+  }
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/gem_votes`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json', Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({ game: key, choice, voter: voterId })
+    });
+    if (!r.ok) throw new Error('vote http ' + r.status);
+    counts[key] = counts[key] || { gem: 0, meh: 0 };
+    counts[key][choice]++;
+    return true;
+  } catch (e) { console.warn('vote failed', e); return false; }
+}
+
+function pct(key) {
+  const c = counts[key] || { gem: 0, meh: 0 };
+  const total = c.gem + c.meh;
+  return total ? Math.round((c.gem / total) * 100) : null;
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+function cardHTML(m) {
+  const key = KEY(m);
+  const c = counts[key] || { gem: 0, meh: 0 };
+  const mine = myVotes[key];
+  const p = pct(key);
+  const genres = m.genres ? m.genres.split(',').join(' · ') : 'Genres not recorded';
+  const hrs = Math.floor(m.runtime / 60), mins = m.runtime % 60;
+  const rt = hrs ? `${hrs}h ${mins}m` : `${mins}m`;
+  return `
+  <div class="card" data-doc="${m.doc}" data-year="${m.year}" data-name="${esc(m.title.toLowerCase())}">
+    <div class="thumb">
+      <div class="tile">
+        <div class="rating">${m.rating.toFixed(1)}<small> / 10</small></div>
+        <div class="yg">${genres}</div>
+      </div>
+      <span class="rankbadge">#${m.rank}</span>
+      <span class="yearpill">${m.year}</span>
+    </div>
+    <div class="body">
+      <h3>${esc(m.title)}</h3>
+      <div class="meta"><span class="pos">★ ${m.rating.toFixed(1)}</span> · <span>${m.votes.toLocaleString()} votes</span> · <span>${rt}</span></div>
+      ${m.pitch ? `<p class="pitch">${esc(m.pitch)}</p>` : ''}
+    </div>
+    <div class="actions">
+      <a class="imdb-btn" href="${IMDB(m)}" target="_blank" rel="noopener">View on IMDb ↗</a>
+    </div>
+    <div class="vote" data-key="${esc(key)}">
+      <div class="q">Is this really a hidden gem?</div>
+      <div class="btns">
+        <button class="vbtn gem ${mine==='gem'?'chosen':''}" data-choice="gem" ${mine?'disabled':''}>💎 Gem <span class="cnt">${c.gem}</span></button>
+        <button class="vbtn meh ${mine==='meh'?'chosen':''}" data-choice="meh" ${mine?'disabled':''}>😐 Meh <span class="cnt">${c.meh}</span></button>
+      </div>
+      <div class="vbar"><div class="fill" style="width:${p===null?0:p}%"></div></div>
+      <div class="result">${p===null ? 'Be the first to weigh in.' : `${p}% of ${c.gem+c.meh} voter${c.gem+c.meh===1?'':'s'} agree it's a gem.`}</div>
+    </div>
+  </div>`;
+}
+
+function wireVotes(scope) {
+  scope.querySelectorAll('.vote').forEach(v => {
+    if (v.dataset.wired) return;
+    v.dataset.wired = '1';
+    const key = v.dataset.key;
+    v.querySelectorAll('.vbtn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (myVotes[key]) return;
+        const choice = btn.dataset.choice;
+        v.querySelectorAll('.vbtn').forEach(b => b.disabled = true);
+        const ok = await sendVote(key, choice);
+        if (!ok) { v.querySelectorAll('.vbtn').forEach(b => b.disabled = false); return; }
+        myVotes[key] = choice;
+        localStorage.setItem('mhg_myvotes', JSON.stringify(myVotes));
+        updateVote(v, key, choice);
+      });
+    });
+  });
+}
+
+function updateVote(v, key, choice) {
+  const c = counts[key] || { gem: 0, meh: 0 };
+  const total = c.gem + c.meh;
+  const p = total ? Math.round((c.gem / total) * 100) : 0;
+  v.querySelector('.vbtn.gem .cnt').textContent = c.gem;
+  v.querySelector('.vbtn.meh .cnt').textContent = c.meh;
+  v.querySelector('.vbtn.' + choice).classList.add('chosen');
+  v.querySelector('.fill').style.width = p + '%';
+  v.querySelector('.result').textContent = `${p}% of ${total} voter${total===1?'':'s'} agree it's a gem.`;
+}
+
+function renderMore() {
+  const slice = MOVIES.slice(shown, shown + PAGE);
+  grid.insertAdjacentHTML('beforeend', slice.map(cardHTML).join(''));
+  shown += slice.length;
+  wireVotes(grid);
+  moreBtn.classList.toggle('hidden', shown >= MOVIES.length);
+  moreBtn.textContent = `Show more movies (${MOVIES.length - shown} left)`;
+  applyFilter();
+}
+moreBtn.addEventListener('click', renderMore);
+
+// filters + search
+document.querySelectorAll('.filters button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.filters button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    if (shown < MOVIES.length) { // filters search the whole list, so load it all
+      const rest = MOVIES.slice(shown);
+      grid.insertAdjacentHTML('beforeend', rest.map(cardHTML).join(''));
+      shown = MOVIES.length;
+      wireVotes(grid);
+      moreBtn.classList.add('hidden');
+    }
+    applyFilter();
+  });
+});
+document.getElementById('search').addEventListener('input', () => {
+  if (shown < MOVIES.length) {
+    const rest = MOVIES.slice(shown);
+    grid.insertAdjacentHTML('beforeend', rest.map(cardHTML).join(''));
+    shown = MOVIES.length;
+    wireVotes(grid);
+    moreBtn.classList.add('hidden');
+  }
+  applyFilter();
+});
+
+function applyFilter() {
+  const f = document.querySelector('.filters button.active').dataset.filter;
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  grid.querySelectorAll('.card').forEach(card => {
+    const isDoc = card.dataset.doc === 'true';
+    const year = Number(card.dataset.year);
+    const okF = f === 'all'
+      || (f === 'docs' && isDoc)
+      || (f === 'classic' && year < 1990)
+      || (f === 'recent' && year >= 2020);
+    const okQ = !q || card.dataset.name.includes(q);
+    card.classList.toggle('hidden', !(okF && okQ));
+  });
+}
+
+(async function init() {
+  const res = await fetch('movies.json');
+  const data = await res.json();
+  MOVIES = data.movies;
+  await loadCounts();
+  renderMore();
+})();
+</script>
+</body>
+</html>
