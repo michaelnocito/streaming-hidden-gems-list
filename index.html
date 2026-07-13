@@ -263,7 +263,7 @@
             <th class="h-runtime num sortable" data-sort="runtime">Runtime<span class="arrow"></span></th>
             <th class="num sortable" data-sort="rating">Rating<span class="arrow"></span></th>
             <th class="h-votes num sortable" data-sort="votes">Votes<span class="arrow"></span></th>
-            <th>IMDb</th>
+            <th>Links</th>
             <th>Your call</th>
           </tr>
         </thead>
@@ -296,6 +296,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const LIVE = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const IMDB = m => `https://www.imdb.com/title/${m.tconst}/`;
+const JW = m => `https://www.justwatch.com/us/search?q=${encodeURIComponent(m.title)}`;
 const KEY = m => `${m.title} (${m.year})`;
 
 const tbody = document.getElementById('tbody');
@@ -371,7 +372,10 @@ function rowHTML(m) {
     <td class="runtime">${rt}</td>
     <td class="rating">★ ${m.rating.toFixed(1)}</td>
     <td class="votes">${m.votes.toLocaleString()}</td>
-    <td class="link"><a class="imdb-link" href="${IMDB(m)}" target="_blank" rel="noopener">Open ↗</a></td>
+    <td class="link">
+      <a class="imdb-link" href="${IMDB(m)}" target="_blank" rel="noopener">IMDb ↗</a>
+      <a class="imdb-link" href="${JW(m)}" target="_blank" rel="noopener" title="Live streaming availability on JustWatch">Watch ↗</a>
+    </td>
     <td class="vote-cell" data-key="${esc(key)}">
       <div class="vwrap">
         <button class="vbtn gem ${mine==='gem'?'chosen':''}" data-choice="gem" ${mine?'disabled':''}>💎 <span class="cnt">${c.gem}</span></button>
