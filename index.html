@@ -89,14 +89,35 @@
     padding: 14px 0; margin-top: 34px;
   }
   .controls .inner { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
-  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
-  .filters button {
+  .filter-toggle {
     background: var(--card); color: var(--muted); border: 1px solid var(--line);
     padding: 8px 16px; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600;
     transition: .15s;
   }
-  .filters button:hover { color: var(--text); border-color: var(--gem-dim); }
-  .filters button.active { background: var(--gem); color: #06231f; border-color: var(--gem); }
+  .filter-toggle:hover { color: var(--text); border-color: var(--gem-dim); }
+  .filter-toggle.on { background: var(--gem); color: #06231f; border-color: var(--gem); }
+  .filter-toggle .fcount { font-weight: 800; }
+
+  .fpanel {
+    border-top: 1px solid var(--line); margin-top: 14px; padding-top: 6px;
+  }
+  .fgroup { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 7px 0; }
+  .fgroup .flabel {
+    width: 84px; flex-shrink: 0; font-size: 11.5px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .08em; font-weight: 700;
+  }
+  .chip {
+    background: var(--card); color: var(--muted); border: 1px solid var(--line);
+    padding: 4px 12px; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: .12s;
+  }
+  .chip:hover { color: var(--text); border-color: var(--gem-dim); }
+  .chip.active { background: var(--gem); color: #06231f; border-color: var(--gem); }
+  .fclear {
+    background: none; border: none; color: var(--gem); cursor: pointer;
+    font-size: 13px; font-weight: 600; padding: 4px 8px;
+  }
+  .fclear:hover { text-decoration: underline; }
   .search input {
     background: var(--card); border: 1px solid var(--line); color: var(--text);
     padding: 9px 14px; border-radius: 999px; font-size: 14px; width: 220px; outline: none;
@@ -108,13 +129,14 @@
     background: var(--card); border: 1px solid var(--line); border-radius: 16px;
     box-shadow: var(--shadow); margin: 26px 0 60px; overflow: hidden;
   }
-  .tscroll { overflow-x: auto; }
+  .tscroll { overflow: auto; max-height: calc(100vh - 190px); }
   table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
   thead th {
-    position: sticky; top: 62px; z-index: 10;
+    position: sticky; top: 0; z-index: 10;
     background: var(--card2); color: var(--muted);
     text-transform: uppercase; letter-spacing: .07em; font-size: 11.5px;
     padding: 11px 12px; border-bottom: 1px solid var(--line);
+    box-shadow: 0 1px 0 var(--line);
     text-align: left; white-space: nowrap; user-select: none;
   }
   thead th.num { text-align: right; }
@@ -174,7 +196,6 @@
     td.votes, thead th.h-votes { display: none; }
     td.year, thead th.h-year { display: none; }
     .t-pitch { display: none; }
-    thead th { top: 108px; }
   }
 
   footer {
@@ -215,13 +236,17 @@
 
 <div class="controls">
   <div class="wrap inner">
-    <div class="filters">
-      <button data-filter="all" class="active">All</button>
-      <button data-filter="docs">Documentaries</button>
-      <button data-filter="classic">Classics (pre-1990)</button>
-      <button data-filter="recent">2020s</button>
-    </div>
+    <button id="filterToggle" class="filter-toggle">⚙ Filters <span class="fcount"></span></button>
     <div class="search"><input id="search" type="search" placeholder="Search movies…" /></div>
+  </div>
+  <div class="wrap">
+    <div id="fpanel" class="fpanel hidden">
+      <div class="fgroup"><span class="flabel">Decade</span><span id="fDecade"></span></div>
+      <div class="fgroup"><span class="flabel">Runtime</span><span id="fRuntime"></span></div>
+      <div class="fgroup"><span class="flabel">Genre</span><span id="fGenre"></span></div>
+      <div class="fgroup"><span class="flabel">Rating</span><span id="fRating"></span></div>
+      <div class="fgroup"><span class="flabel">Votes</span><span id="fVotes"></span><button id="fclear" class="fclear">Clear all</button></div>
+    </div>
   </div>
 </div>
 
@@ -335,7 +360,7 @@ function rowHTML(m) {
   const hrs = Math.floor(m.runtime / 60), mins = m.runtime % 60;
   const rt = hrs ? `${hrs}h ${mins}m` : `${mins}m`;
   return `
-  <tr data-doc="${m.doc}" data-year="${m.year}" data-name="${esc(m.title.toLowerCase())}">
+  <tr data-year="${m.year}" data-runtime="${m.runtime}" data-rating="${m.rating}" data-votes="${m.votes}" data-genres="${esc(m.genres)}" data-name="${esc(m.title.toLowerCase())}">
     <td class="rank">${m.rank}</td>
     <td class="title-cell">
       <div class="t-title"><a href="${IMDB(m)}" target="_blank" rel="noopener">${esc(m.title)}</a></div>
@@ -405,32 +430,95 @@ document.querySelectorAll('thead th.sortable').forEach(th => {
   });
 });
 
-// filters + search
-document.querySelectorAll('.filters button').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.filters button').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    applyFilter();
-  });
+/* ============ COLUMN FILTERS ============
+   OR within a group, AND across groups. Chips are built from the
+   data itself, so the panel always matches what's in the table. */
+const RUNTIME_BUCKETS = [
+  { label: '< 1h',      test: r => r < 60 },
+  { label: '1–1.5h',    test: r => r >= 60  && r < 90 },
+  { label: '1.5–2h',    test: r => r >= 90  && r < 120 },
+  { label: '2–2.5h',    test: r => r >= 120 && r < 150 },
+  { label: '2.5–3h',    test: r => r >= 150 && r < 180 },
+  { label: '3h+',       test: r => r >= 180 },
+];
+const RATING_BUCKETS = [
+  { label: '8.0+', test: x => x >= 8.0 },
+  { label: '8.5+', test: x => x >= 8.5 },
+  { label: '9.0+', test: x => x >= 9.0 },
+];
+const VOTES_BUCKETS = [
+  { label: '5–10k',  test: v => v < 10000 },
+  { label: '10–25k', test: v => v >= 10000 && v < 25000 },
+  { label: '25–50k', test: v => v >= 25000 },
+];
+const state = { decade: new Set(), runtime: new Set(), genre: new Set(), rating: null, votes: new Set() };
+
+function buildChips() {
+  const decades = [...new Set(MOVIES.map(m => Math.floor(m.year / 10) * 10))].sort();
+  const gCount = {};
+  MOVIES.forEach(m => (m.genres ? m.genres.split(',') : []).forEach(g => gCount[g] = (gCount[g] || 0) + 1));
+  const genres = Object.entries(gCount).sort((a, b) => b[1] - a[1]).slice(0, 14).map(e => e[0]);
+
+  const mk = (host, labels, group, single) => {
+    const el = document.getElementById(host);
+    el.innerHTML = labels.map(l => `<button class="chip" data-group="${group}" data-val="${l}">${l}</button>`).join(' ');
+    el.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', () => {
+      const val = ch.dataset.val;
+      if (single) {
+        const was = state[group] === val;
+        state[group] = was ? null : val;
+        el.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', !was && c === ch));
+      } else {
+        state[group].has(val) ? state[group].delete(val) : state[group].add(val);
+        ch.classList.toggle('active');
+      }
+      applyFilter();
+    }));
+  };
+  mk('fDecade',  decades.map(d => d + 's'), 'decade');
+  mk('fRuntime', RUNTIME_BUCKETS.map(b => b.label), 'runtime');
+  mk('fGenre',   genres, 'genre');
+  mk('fRating',  RATING_BUCKETS.map(b => b.label), 'rating', true);
+  mk('fVotes',   VOTES_BUCKETS.map(b => b.label), 'votes');
+}
+
+document.getElementById('filterToggle').addEventListener('click', () => {
+  document.getElementById('fpanel').classList.toggle('hidden');
+});
+document.getElementById('fclear').addEventListener('click', () => {
+  state.decade.clear(); state.runtime.clear(); state.genre.clear(); state.votes.clear(); state.rating = null;
+  document.querySelectorAll('.chip.active').forEach(c => c.classList.remove('active'));
+  applyFilter();
 });
 document.getElementById('search').addEventListener('input', applyFilter);
 
+function activeFilterCount() {
+  return state.decade.size + state.runtime.size + state.genre.size + state.votes.size + (state.rating ? 1 : 0);
+}
+
 function applyFilter() {
-  const f = document.querySelector('.filters button.active').dataset.filter;
   const q = document.getElementById('search').value.trim().toLowerCase();
   let visible = 0;
   tbody.querySelectorAll('tr').forEach(tr => {
-    const isDoc = tr.dataset.doc === 'true';
     const year = Number(tr.dataset.year);
-    const okF = f === 'all'
-      || (f === 'docs' && isDoc)
-      || (f === 'classic' && year < 1990)
-      || (f === 'recent' && year >= 2020);
+    const rt = Number(tr.dataset.runtime);
+    const rating = Number(tr.dataset.rating);
+    const votes = Number(tr.dataset.votes);
+    const genres = tr.dataset.genres ? tr.dataset.genres.split(',') : [];
+    const okDecade = !state.decade.size || state.decade.has(Math.floor(year / 10) * 10 + 's');
+    const okRt = !state.runtime.size || RUNTIME_BUCKETS.some(b => state.runtime.has(b.label) && b.test(rt));
+    const okGenre = !state.genre.size || genres.some(g => state.genre.has(g));
+    const okRating = !state.rating || RATING_BUCKETS.find(b => b.label === state.rating).test(rating);
+    const okVotes = !state.votes.size || VOTES_BUCKETS.some(b => state.votes.has(b.label) && b.test(votes));
     const okQ = !q || tr.dataset.name.includes(q);
-    const show = okF && okQ;
+    const show = okDecade && okRt && okGenre && okRating && okVotes && okQ;
     tr.classList.toggle('hidden', !show);
     if (show) visible++;
   });
+  const n = activeFilterCount();
+  const tog = document.getElementById('filterToggle');
+  tog.classList.toggle('on', n > 0);
+  tog.querySelector('.fcount').textContent = n ? `(${n})` : '';
   document.getElementById('countNote').textContent =
     visible === MOVIES.length ? `Showing all ${MOVIES.length} hidden gems.` : `Showing ${visible} of ${MOVIES.length} hidden gems.`;
 }
@@ -439,6 +527,7 @@ function applyFilter() {
   const res = await fetch('movies.json');
   const data = await res.json();
   MOVIES = data.movies;
+  buildChips();
   await loadCounts();
   render();
 })();
